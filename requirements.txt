@@ -1,0 +1,15 @@
+langchain_community 
+pymupdf
+rapidocr-onnxruntime
+langchain_experimental
+langchain_openai
+langchain_astradb
+rank_bm25
+python-docx
+fastapi
+pytest
+gunicorn
+streamlit 
+uvicorn
+python-multipart
+-e .
