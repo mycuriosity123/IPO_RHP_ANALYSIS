@@ -65,7 +65,7 @@ if st.session_state.file_uploaded:
                 st.error(f"Error:{e}")
         
         else:
-            st.warning("❗ Please enter a query.")
+            st.warning("❗Please enter a query.")
 
 
 

@@ -35,21 +35,6 @@ ASTRA_DB_APPLICATION_TOKEN=os.environ["ASTRA_DB_APPLICATION_TOKEN"]
 
 
 
-
-# def chunking_data(docs):
-#     try:
-#         logger.info("entered the ingestion function")
-#         logger.info(type(docs))
-#         text_splitter = SemanticChunker(OpenAIEmbeddings())
-#         pages = text_splitter.split_documents(docs)
-#         logger.info("data was chunked successfully")
-#         data={"status":"success","response":{"message":str(pages[0].page_content),""}}
-#         return JSONResponse(content=data)
-#     except Exception as e:
-#         logger.error(f"error:{e}")
-#         data={"status":"failed","response":str(e)}
-#         return JSONResponse(content=data)
-
 class HybridRetriever:
     def __init__(self, vectorstore, top_k_vector=20, top_k_final=5):
         self.vectorstore = vectorstore
