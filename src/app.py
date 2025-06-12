@@ -5,7 +5,7 @@ from typing import Annotated
 from langchain_community.document_loaders.parsers import RapidOCRBlobParser
 from langchain_community.document_loaders import PyMuPDFLoader
 from fastapi.responses import JSONResponse
-from .run_local import chunking_data , retrieve_generation
+from .run_local import PDF_Analysis
 import os
 import json
 from logger_config import logger
@@ -30,16 +30,43 @@ async def upload_file(file: UploadFile = File(...)):
         loader = PyMuPDFLoader(file_location, mode="page", images_inner_format="markdown-img",images_parser=RapidOCRBlobParser())
         docs = loader.load()
         logger.info("file was parsed successfully using PyMUPDFLoader")
-        response_json=chunking_data(docs)
+        app.state.pdf_analyser=PDF_Analysis(docs=docs)
+        response_json=app.state.pdf_analyser.chunking_data()
         res=json.loads(response_json.body)
+        if res["status"]=="failed":
+            raise Exception(res["response"])
+        logger.info(res["response"])
+        return JSONResponse(status_code=200,content={"message":res["response"]})
+    
+    except Exception as e:
+        logger.error(f"error:{e}",exc_info=True)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+     
+
+class UserInput(BaseModel):
+    query:str
+
+@app.post("/user_query")
+async def rag_search(userinput:UserInput):
+    try:
+        if not hasattr(app.state, "pdf_analyser"):
+            return JSONResponse(status_code=400, content={"error": "No PDF uploaded and processed yet."})
+        pdf_analyser = app.state.pdf_analyser
+        output_json = pdf_analyser.retrieve_generation(usr_qry=userinput.query)
+        res=json.loads(output_json.body)
         if res["status"]=="failed":
             raise Exception(res["response"])
         logger.info(res["response"])
         return JSONResponse(status_code=200,content={"message":res["response"]})
 
     except Exception as e:
+        logger.error(f"error:{e}",exc_info=True)
         return JSONResponse(status_code=500, content={"error": str(e)})
-     
+    
+
+
+
+
 
         
             

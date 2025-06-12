@@ -34,28 +34,21 @@ ASTRA_DB_API_ENDPOINT=os.environ["ASTRA_DB_API_ENDPOINT"]
 ASTRA_DB_APPLICATION_TOKEN=os.environ["ASTRA_DB_APPLICATION_TOKEN"]
 
 
-def create_vectorstore():
-    return AstraDBVectorStore(
-        collection_name="astra_vectorize_langchain",
-        embedding=embeddings_model,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        namespace="default",
-    )
 
-def chunking_data(docs):
-    try:
-        logger.info("entered the ingestion function")
-        logger.info(type(docs))
-        text_splitter = SemanticChunker(OpenAIEmbeddings())
-        pages = text_splitter.split_documents(docs)
-        logger.info("data was chunked successfully")
-        data={"status":"success","response":str(pages[0].page_content)}
-        return JSONResponse(content=data)
-    except Exception as e:
-        logger.error(f"error:{e}")
-        data={"status":"failed","response":str(e)}
-        return JSONResponse(content=data)
+
+# def chunking_data(docs):
+#     try:
+#         logger.info("entered the ingestion function")
+#         logger.info(type(docs))
+#         text_splitter = SemanticChunker(OpenAIEmbeddings())
+#         pages = text_splitter.split_documents(docs)
+#         logger.info("data was chunked successfully")
+#         data={"status":"success","response":{"message":str(pages[0].page_content),""}}
+#         return JSONResponse(content=data)
+#     except Exception as e:
+#         logger.error(f"error:{e}")
+#         data={"status":"failed","response":str(e)}
+#         return JSONResponse(content=data)
 
 class HybridRetriever:
     def __init__(self, vectorstore, top_k_vector=20, top_k_final=5):
@@ -83,22 +76,48 @@ class HybridRetriever:
         return top_docs
 
 
-def format_docs(docs):
-    return "\n\n".join(doc[0] for doc in docs)
 
-def retrieve_generation(pages,user_query):
-    embeddings_model = OpenAIEmbeddings(model="text-embedding-3-large")
-    vectorstore = AstraDBVectorStore(collection_name="astra_vectorize_langchain",embedding=embeddings_model,api_endpoint=ASTRA_DB_API_ENDPOINT,token=ASTRA_DB_APPLICATION_TOKEN,namespace="default",)
-    uuids = vectorstore.add_documents(documents=pages)
-    retriever = HybridRetriever(vectorstore=vectorstore)
-    prompt = hub.pull("rlm/rag-prompt")
-    model = ChatOpenAI(temperature=0, model="gpt-4")
-    retriever_runnable = RunnableLambda(lambda query: retriever.get_relevant_documents(query))
-    format_docs_runnable = RunnableLambda(format_docs)
-    rag_chain = ({"context": retriever_runnable | format_docs_runnable,"question": RunnablePassthrough()}| prompt | model | StrOutputParser())
-    output=rag_chain.invoke(user_query)
-    return JSONResponse({"status":"success","response":output})
 
+
+
+
+class PDF_Analysis(HybridRetriever):
+    def __init__(self,docs=None):
+        self.docs = docs
+        self.pages = []
+        self.vectorstore = None
+
+    
+    def chunking_data(self):
+        try:
+            logger.info("entered the ingestion function")
+            logger.info(type(self.docs))
+            text_splitter = SemanticChunker(OpenAIEmbeddings())
+            self.pages = text_splitter.split_documents(self.docs)
+            logger.info("data was chunked successfully")
+            data={"status":"success","response":str(self.pages[0].page_content)}
+            return JSONResponse(content=data)
+        except Exception as e:
+            logger.error(f"error:{e}")
+            data={"status":"failed","response":str(e)}
+            return JSONResponse(content=data)
+        
+    @staticmethod
+    def format_docs(docs):
+        return "\n\n".join(doc[0] for doc in docs)
+        
+    def retrieve_generation(self,user_query:str):
+        embeddings_model = OpenAIEmbeddings(model="text-embedding-3-large")
+        self.vectorstore = AstraDBVectorStore(collection_name="astra_vectorize_langchain",embedding=embeddings_model,api_endpoint=ASTRA_DB_API_ENDPOINT,token=ASTRA_DB_APPLICATION_TOKEN,namespace="default",)
+        uuids = self.vectorstore.add_documents(documents=self.pages)
+        super().__init__(vectorstore=self.vectorstore)
+        retriever_runnable = RunnableLambda(lambda query: self.get_relevant_documents(query))
+        format_docs_runnable = RunnableLambda(PDF_Analysis.format_docs)
+        prompt = hub.pull("rlm/rag-prompt")
+        model = ChatOpenAI(temperature=0, model="gpt-4")
+        rag_chain = ({"context": retriever_runnable | format_docs_runnable,"question": RunnablePassthrough()}| prompt | model | StrOutputParser())
+        output=rag_chain.invoke(user_query)
+        return JSONResponse({"status":"success","response":output})
 
 
 
