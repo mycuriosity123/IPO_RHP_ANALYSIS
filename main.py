@@ -48,26 +48,25 @@ if st.session_state.file_uploaded:
 
     if st.button("Ask"):
         if user_query.strip():
-            logger.info(user_query)
-            st.session_state.user_query = user_query
-            st.write("⏳ Processing your query...")
-            url = "http://localhost:8000/user_query"
-            headers = {"accept": "application/json","Content-Type": "application/json"}
-            payload = {"query": f"{user_query}"}
-            resp=requests.post(url,headers=headers,json=payload)
-            logger.info(resp.status_code)
-            logger.info(type(resp))
-            logger.info(resp.text)
-
-            
-
-            
-            result = "Sample response from your RAG chain"
-
-            st.subheader("💬 Response")
-            st.write(result)
+            try:
+                logger.info(user_query)
+                st.session_state.user_query = user_query
+                st.write("⏳ Processing your query...")
+                url = "http://localhost:8000/user_query"
+                headers = {"accept": "application/json","Content-Type": "application/json"}
+                payload = {"query": f"{user_query}"}
+                resp=requests.post(url,headers=headers,json=payload)
+                logger.info(resp.status_code)
+                if resp.status_code==200:
+                    data = json.loads(resp.content)
+                    st.subheader("💬 Response")
+                    st.write(data["message"])
+            except Exception as e:
+                st.error(f"Error:{e}")
+        
         else:
             st.warning("❗ Please enter a query.")
+
 
 
 

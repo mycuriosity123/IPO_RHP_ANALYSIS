@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile , Request
 from fastapi.responses import StreamingResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ValidationError, field_validator,FilePath
 from typing import Annotated
 from langchain_community.document_loaders.parsers import RapidOCRBlobParser
@@ -46,6 +47,16 @@ async def upload_file(file: UploadFile = File(...)):
 class UserInput(BaseModel):
     query:str
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "validation_failed",
+            "errors": exc.errors()
+        }
+    )
+
 @app.post("/user_query")
 async def rag_search(userinput:UserInput):
     try:
@@ -58,7 +69,9 @@ async def rag_search(userinput:UserInput):
             raise Exception(res["response"])
         logger.info(res["response"])
         return JSONResponse(status_code=200,content={"message":res["response"]})
-
+    except RequestValidationError as ve:
+        logger.error(f"validation error:{ve}",exc_info=True)
+        return JSONResponse(status_code=422,content={"error": "Invalid input", "details": ve.errors()})
     except Exception as e:
         logger.error(f"error:{e}",exc_info=True)
         return JSONResponse(status_code=500, content={"error": str(e)})
