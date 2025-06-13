@@ -24,7 +24,7 @@ if uploaded_file and st.button("Upload"):
     with st.spinner("Uploading..."):
         try:
             response = requests.post(
-                "http://localhost:8000/upload",
+                "http://127.0.0.1:8000/upload",
                 files={"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
             )
 
@@ -52,7 +52,7 @@ if st.session_state.file_uploaded:
                 logger.info(user_query)
                 st.session_state.user_query = user_query
                 st.write("⏳ Processing your query...")
-                url = "http://localhost:8000/user_query"
+                url = "http://127.0.0.1:8000/user_query"
                 headers = {"accept": "application/json","Content-Type": "application/json"}
                 payload = {"query": f"{user_query}"}
                 resp=requests.post(url,headers=headers,json=payload)

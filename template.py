@@ -15,6 +15,8 @@ list_of_files = [
     ".env",
     "logger_config.py",
     "research/trials.ipynb",
+    "Dockerfile",
+    ".dockerignore",
 
 ]
 

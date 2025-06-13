@@ -6,10 +6,17 @@ from typing import Annotated
 from langchain_community.document_loaders.parsers import RapidOCRBlobParser
 from langchain_community.document_loaders import PyMuPDFLoader
 from fastapi.responses import JSONResponse
-from .run_local import PDF_Analysis
+from run_local import PDF_Analysis
 import os
 import json
+import sys
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from logger_config import logger
+from dotenv import load_dotenv
+load_dotenv()
+
 
 
 app = FastAPI()
@@ -88,8 +95,8 @@ async def rag_search(userinput:UserInput):
 def read_root():
     return {"Hello": "World"}
 
-# if __name__=="__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+if __name__=="__main__":
+    import uvicorn
+    uvicorn.run("src.app:app", host="0.0.0.0", port=8000,reload=True)
 
 
