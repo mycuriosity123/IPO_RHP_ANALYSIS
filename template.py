@@ -17,6 +17,8 @@ list_of_files = [
     "research/trials.ipynb",
     "Dockerfile",
     ".dockerignore",
+    "test_app.py",
+    ".github/workflows/cicd.yml"
 
 ]
 
