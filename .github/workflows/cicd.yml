@@ -60,6 +60,28 @@ jobs:
           file : ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME}}/ragmultimodal-fastapiapp:latest
+
+  build-and-deploy:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name : Deploy to EC2 instance
+        uses : appleboy/ssh-action@master
+        with :
+          host : ${{ secrets.EC2_HOST}}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY}}
+          script : |
+           docker stop ragmultimodal-fastapiapp || true
+           docker rm ragmultimodal-fastapiapp || true
+           docker pull ${{ secrets.DOCKER_USERNAME }}/ragmultimodal-fastapiapp:latest
+           docker run -d -p 8000:8000 -p 8501:8501 --env-file .env --name multimodelragappfromhub ${{ secrets.DOCKER_USERNAME }}/ragmultimodal-fastapiapp:latest
+
+
+
+
+
       
         
 
