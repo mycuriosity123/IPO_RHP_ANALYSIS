@@ -10,8 +10,6 @@ from run_local import PDF_Analysis
 import os
 import json
 import sys
-import sys
-import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from logger_config import logger
 from dotenv import load_dotenv
